@@ -459,3 +459,85 @@ main {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* --- MIDNIGHT LOGIN THEME SPECIFIC ENFORCEMENT --- */
+.login-midnight-theme,
+[data-theme="light"] .login-midnight-theme,
+[data-theme="dark"] .login-midnight-theme {
+  background: linear-gradient(135deg, #090d16 0%, #0f172a 50%, #131b2e 100%) !important;
+  color: #f8fafc !important;
+}
+
+.login-midnight-theme .glass-panel,
+[data-theme="light"] .login-midnight-theme .glass-panel,
+[data-theme="dark"] .login-midnight-theme .glass-panel {
+  background: rgba(30, 41, 59, 0.75) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 35px rgba(79, 70, 229, 0.15) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+.login-midnight-theme h1,
+.login-midnight-theme h2,
+.login-midnight-theme h3,
+.login-midnight-theme h4,
+.login-midnight-theme label,
+.login-midnight-theme .text-white,
+[data-theme="light"] .login-midnight-theme h1,
+[data-theme="light"] .login-midnight-theme h2,
+[data-theme="light"] .login-midnight-theme h3,
+[data-theme="light"] .login-midnight-theme h4,
+[data-theme="light"] .login-midnight-theme label,
+[data-theme="light"] .login-midnight-theme .text-white {
+  color: #ffffff !important;
+}
+
+.login-midnight-theme .text-slate-300,
+[data-theme="light"] .login-midnight-theme .text-slate-300 {
+  color: #cbd5e1 !important;
+}
+
+.login-midnight-theme .text-slate-400,
+[data-theme="light"] .login-midnight-theme .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.login-midnight-theme .text-slate-500,
+[data-theme="light"] .login-midnight-theme .text-slate-500 {
+  color: #64748b !important;
+}
+
+.login-midnight-theme input,
+[data-theme="light"] .login-midnight-theme input,
+[data-theme="dark"] .login-midnight-theme input {
+  background-color: rgba(15, 23, 42, 0.9) !important;
+  color: #ffffff !important;
+  border-color: rgba(51, 65, 85, 0.8) !important;
+}
+
+.login-midnight-theme input::placeholder,
+[data-theme="light"] .login-midnight-theme input::placeholder {
+  color: #64748b !important;
+}
+
+.login-midnight-theme input:focus,
+[data-theme="light"] .login-midnight-theme input:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3) !important;
+  outline: none !important;
+}
+
+.login-midnight-theme button.bg-gradient-to-r,
+[data-theme="light"] .login-midnight-theme button.bg-gradient-to-r {
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #9333ea 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4) !important;
+}
+
+.login-midnight-theme button.bg-gradient-to-r:hover,
+[data-theme="light"] .login-midnight-theme button.bg-gradient-to-r:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #4f46e5 50%, #7e22ce 100%) !important;
+  box-shadow: 0 15px 30px -5px rgba(79, 70, 229, 0.5) !important;
+}
+

@@ -21,7 +21,7 @@ import {
   EyeOff
 } from 'lucide-react';
 
-export const StudentList = ({ onRecordDeposit }) => {
+export const StudentList = ({ onDepositSuccess }) => {
   const { selectedMonth, user } = useContext(AuthContext);
   const isAdmin = user?.role === 'admin';
 
@@ -227,13 +227,7 @@ export const StudentList = ({ onRecordDeposit }) => {
               {user && (
                 <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
                   <button
-                    onClick={() => {
-                      if (onRecordDeposit) {
-                        onRecordDeposit(st);
-                      } else {
-                        setSelectedStudentForDeposit(st);
-                      }
-                    }}
+                    onClick={() => setSelectedStudentForDeposit(st)}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 text-xs font-bold border border-emerald-500/30 transition cursor-pointer"
                   >
                     <CreditCard className="h-3.5 w-3.5" />
@@ -385,6 +379,7 @@ export const StudentList = ({ onRecordDeposit }) => {
         monthStr={selectedMonth}
         onSuccess={() => {
           fetchStudents();
+          if (onDepositSuccess) onDepositSuccess();
           setAlertDialog({
             isOpen: true,
             title: 'Deposit Recorded',

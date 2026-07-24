@@ -119,7 +119,7 @@ export const AdminDashboard = ({ activeTab }) => {
 
   if (activeTab === 'meals') return <MealGrid />;
   if (activeTab === 'expenses') return <ExpenseList />;
-  if (activeTab === 'students') return <StudentList onRecordDeposit={(st) => setSelectedStudentForDeposit(st)} />;
+  if (activeTab === 'students') return <StudentList onDepositSuccess={fetchCalculatedBills} />;
   if (activeTab === 'history') return <ActivityHistoryList />;
 
   return (

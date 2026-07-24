@@ -32,10 +32,11 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#0f172a] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Decorative Glow Elements */}
-      <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-indigo-600/15 blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-purple-600/15 blur-3xl pointer-events-none"></div>
+    <div className="login-midnight-theme min-h-[100dvh] bg-gradient-to-br from-[#090d16] via-[#0f172a] to-[#131b2e] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Decorative Ambient Midnight Glow Elements */}
+      <div className="absolute top-1/4 left-1/4 h-[28rem] w-[28rem] rounded-full bg-indigo-600/20 blur-[120px] pointer-events-none animate-pulse"></div>
+      <div className="absolute bottom-1/4 right-1/4 h-[28rem] w-[28rem] rounded-full bg-purple-600/20 blur-[120px] pointer-events-none animate-pulse"></div>
+      <div className="absolute top-1/2 right-1/3 h-72 w-72 rounded-full bg-blue-600/15 blur-[100px] pointer-events-none"></div>
 
       <div className="w-full max-w-md relative z-10 space-y-4">
         {/* App Brand */}
