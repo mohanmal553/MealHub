@@ -2,16 +2,19 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    const connStr = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/mealhub';
+    let connStr = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/mealhub';
+    
+    // Ensure database name 'mealhub' is explicitly used
     const conn = await mongoose.connect(connStr, {
-      serverSelectionTimeoutMS: 3000,
+      dbName: 'mealhub',
+      serverSelectionTimeoutMS: 5000,
     });
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+
+    console.log(`✅ Connected to MongoDB Database: "${conn.connection.name}" on host: ${conn.connection.host}`);
     return true;
   } catch (error) {
-    console.warn(`MongoDB Connection Failed: ${error.message}`);
-    console.warn(`Running in Hybrid/Fallback Mode. Endpoints will utilize memory/file fallback if DB unavailable.`);
-    return false;
+    console.error(`❌ MongoDB Connection Error: ${error.message}`);
+    throw error;
   }
 };
 

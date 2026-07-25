@@ -1,5 +1,5 @@
 const User = require('../models/User');
-const { inMemStudents, generateId } = require('../utils/inMemoryStore');
+const { logActivity } = require('../utils/activityLogger');
 
 // @desc    Get all hostel members
 // @route   GET /api/students
@@ -9,9 +9,8 @@ const getStudents = async (req, res) => {
     return res.json(dbStudents || []);
   } catch (err) {
     console.error('Error fetching members from DB:', err);
+    return res.status(500).json({ message: 'Failed to load hostel members from database' });
   }
-
-  res.json(inMemStudents);
 };
 
 // @desc    Add new member with required password created by Admin
@@ -32,31 +31,30 @@ const addStudent = async (req, res) => {
     }
 
     const newStudent = await User.create({
-      name,
+      name: name.trim(),
       email: cleanEmail,
       password: password,
-      roomNumber: roomNumber || '',
-      phone: phone || '',
+      roomNumber: roomNumber ? roomNumber.trim() : '',
+      phone: phone ? phone.trim() : '',
       role: 'student'
     });
 
     console.log(`✅ Member created in DB: ${name} (${cleanEmail})`);
+
+    await logActivity({
+      req,
+      actionType: 'MEMBER_REGISTERED',
+      entityName: 'Member Directory',
+      description: `Registered new hostel member "${name}" (${cleanEmail})`,
+      oldValue: 'None',
+      newValue: `Room: ${roomNumber || 'N/A'}`
+    });
+
     return res.status(201).json(newStudent);
   } catch (err) {
     console.error('Error creating member in DB:', err);
+    return res.status(500).json({ message: err.message || 'Failed to save member to database' });
   }
-
-  const newMemStudent = {
-    _id: 'st_' + generateId(),
-    name,
-    email: cleanEmail,
-    roomNumber: roomNumber || '',
-    phone: phone || '',
-    role: 'student'
-  };
-
-  inMemStudents.push(newMemStudent);
-  res.status(201).json(newMemStudent);
 };
 
 // @desc    Update member profile & optional password
@@ -67,33 +65,35 @@ const updateStudent = async (req, res) => {
 
   try {
     const student = await User.findById(studentId);
-    if (student) {
-      if (name) student.name = name;
-      if (email) student.email = email.toLowerCase().trim();
-      if (roomNumber !== undefined) student.roomNumber = roomNumber;
-      if (phone !== undefined) student.phone = phone;
-      if (password && password.trim() !== '') {
-        student.password = password; // Pre-save hook will hash password
-      }
-
-      const updated = await student.save();
-      console.log(`✅ Member updated in DB: ${studentId}`);
-      return res.json(updated);
+    if (!student) {
+      return res.status(404).json({ message: 'Member record not found' });
     }
+
+    if (name) student.name = name.trim();
+    if (email) student.email = email.toLowerCase().trim();
+    if (roomNumber !== undefined) student.roomNumber = roomNumber.trim();
+    if (phone !== undefined) student.phone = phone.trim();
+    if (password && password.trim() !== '') {
+      student.password = password; // Pre-save hook will hash password
+    }
+
+    const updated = await student.save();
+    console.log(`✅ Member updated in DB: ${studentId}`);
+
+    await logActivity({
+      req,
+      actionType: 'MEMBER_UPDATED',
+      entityName: 'Member Directory',
+      description: `Updated profile for member "${student.name}"`,
+      oldValue: 'Previous Profile',
+      newValue: 'Updated Profile'
+    });
+
+    return res.json(updated);
   } catch (err) {
     console.error('Error updating member in DB:', err);
+    return res.status(500).json({ message: err.message || 'Failed to update member in database' });
   }
-
-  const idx = inMemStudents.findIndex(s => s._id === studentId);
-  if (idx !== -1) {
-    if (name) inMemStudents[idx].name = name;
-    if (email) inMemStudents[idx].email = email.toLowerCase().trim();
-    if (roomNumber !== undefined) inMemStudents[idx].roomNumber = roomNumber;
-    if (phone !== undefined) inMemStudents[idx].phone = phone;
-    return res.json(inMemStudents[idx]);
-  }
-
-  res.status(404).json({ message: 'Member record not found' });
 };
 
 // @desc    Delete member
@@ -103,22 +103,27 @@ const deleteStudent = async (req, res) => {
 
   try {
     const student = await User.findById(studentId);
-    if (student) {
-      await User.findByIdAndDelete(studentId);
-      console.log(`✅ Member deleted from DB: ${studentId}`);
-      return res.json({ message: 'Member deleted' });
+    if (!student) {
+      return res.status(404).json({ message: 'Member not found' });
     }
+
+    await User.findByIdAndDelete(studentId);
+    console.log(`✅ Member deleted from DB: ${studentId}`);
+
+    await logActivity({
+      req,
+      actionType: 'MEMBER_DELETED',
+      entityName: 'Member Directory',
+      description: `Deleted member account "${student.name}"`,
+      oldValue: student.name,
+      newValue: 'DELETED'
+    });
+
+    return res.json({ message: 'Member deleted' });
   } catch (err) {
     console.error('Error deleting member from DB:', err);
+    return res.status(500).json({ message: 'Failed to delete member from database' });
   }
-
-  const idx = inMemStudents.findIndex(s => s._id === studentId);
-  if (idx !== -1) {
-    inMemStudents.splice(idx, 1);
-    return res.json({ message: 'Member deleted' });
-  }
-
-  res.status(404).json({ message: 'Member not found' });
 };
 
 module.exports = {

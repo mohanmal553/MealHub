@@ -21,60 +21,25 @@ const loginUser = async (req, res) => {
 
   console.log(`🔑 Login Attempt: email="${cleanEmail}"`);
 
-  // 1. Admin Single Authorized Login Override (mealhub.mohan@gmail.com / admin123)
-  if (cleanEmail === 'mealhub.mohan@gmail.com' && cleanPassword === 'admin123') {
-    let user;
-    try {
-      user = await User.findOne({ email: cleanEmail });
-      if (!user) {
-        user = await User.create({
-          name: 'MealHub Admin',
-          email: 'mealhub.mohan@gmail.com',
-          password: 'admin123',
-          role: 'admin',
-          roomNumber: 'A-101'
-        });
-      }
-    } catch (err) {
-      user = {
-        _id: 'admin_1',
-        name: 'MealHub Admin',
-        email: 'mealhub.mohan@gmail.com',
-        role: 'admin',
-        roomNumber: 'A-101'
-      };
-    }
-
-    console.log(`✅ Admin Login Grant Success: ${cleanEmail}`);
-    return res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: 'admin',
-      roomNumber: user.roomNumber || 'A-101',
-      token: generateToken(user._id)
-    });
-  }
-
-  // 2. Registered Member Account Match
   try {
     const user = await User.findOne({ email: cleanEmail });
     if (user) {
       const isMatch = await user.comparePassword(cleanPassword);
       if (isMatch) {
-        console.log(`✅ Member Login Grant Success: ${cleanEmail}`);
+        console.log(`✅ Login Grant Success: ${cleanEmail} (${user.role})`);
         return res.json({
           _id: user._id,
           name: user.name,
           email: user.email,
           role: user.role || 'student',
-          roomNumber: user.roomNumber,
+          roomNumber: user.roomNumber || '',
           token: generateToken(user._id)
         });
       }
     }
   } catch (err) {
-    console.error('Error during member login check:', err);
+    console.error('Error during database login check:', err);
+    return res.status(500).json({ message: 'Database connection error during authentication' });
   }
 
   return res.status(401).json({ message: 'Invalid credentials. Check email and password.' });

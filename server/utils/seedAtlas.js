@@ -1,28 +1,44 @@
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const connectDB = require('../config/db');
 const User = require('../models/User');
 const DailyMeal = require('../models/DailyMeal');
 const Expense = require('../models/Expense');
 const Payment = require('../models/Payment');
 const ActivityLog = require('../models/ActivityLog');
 
-dotenv.config();
+const ATLAS_URI = 'mongodb+srv://mohanmal553_db_user:CYvsq0Gt531SduuD@cluster0.iuednzg.mongodb.net/mealhub?retryWrites=true&w=majority';
+const ALT_ATLAS_URI = 'mongodb+srv://mohanmal553_db_user:CYvsq0Gt531SduuD@cluster0.iuednzg.mongodb.net/?retryWrites=true&w=majority';
 
-const seedFullData = async () => {
+const seedAtlas = async () => {
+  let connected = false;
+
+  console.log('📡 Connecting to MongoDB Atlas...');
   try {
-    await connectDB();
+    await mongoose.connect(ATLAS_URI, { serverSelectionTimeoutMS: 8000 });
+    console.log('✅ Connected to MongoDB Atlas (database: mealhub)');
+    connected = true;
+  } catch (err1) {
+    console.warn('Attempting connection to root Atlas URI...', err1.message);
+    try {
+      await mongoose.connect(ALT_ATLAS_URI, { serverSelectionTimeoutMS: 8000 });
+      console.log('✅ Connected to MongoDB Atlas root');
+      connected = true;
+    } catch (err2) {
+      console.error('❌ Failed to connect to Atlas:', err2.message);
+      process.exit(1);
+    }
+  }
 
-    console.log('🧹 Clearing existing database data...');
+  if (!connected) process.exit(1);
+
+  try {
+    console.log('🧹 Clearing existing MongoDB Atlas data...');
     await User.deleteMany({});
     await DailyMeal.deleteMany({});
     await Expense.deleteMany({});
     await Payment.deleteMany({});
     await ActivityLog.deleteMany({});
 
-    console.log('👤 Creating Users (Admin & Students)...');
-
-    // 1. Create Admin
+    console.log('👑 Creating Admin Account on Atlas (mealhub.mohan@gmail.com)...');
     const admin = await User.create({
       name: 'MealHub Admin',
       email: 'mealhub.mohan@gmail.com',
@@ -32,7 +48,7 @@ const seedFullData = async () => {
       phone: '9876543210'
     });
 
-    // 2. Create Students
+    console.log('👥 Creating Student Accounts on Atlas...');
     const student1 = await User.create({
       name: 'Rahul Sharma',
       email: 'rahul@gmail.com',
@@ -71,10 +87,7 @@ const seedFullData = async () => {
 
     const students = [student1, student2, student3, student4];
 
-    console.log(`✅ Created 1 Admin and ${students.length} Student accounts.`);
-
-    // 3. Seed Daily Meals for July 2026 (Dates 01 to 25)
-    console.log('🍲 Generating Daily Meal records...');
+    console.log('🍲 Creating Daily Meals on Atlas...');
     const currentMonthStr = '2026-07';
     const mealsToInsert = [];
 
@@ -83,7 +96,6 @@ const seedFullData = async () => {
       const dateStr = `${currentMonthStr}-${dayStr}`;
 
       students.forEach((st, idx) => {
-        // Leave some off days for realistic data (e.g. weekends or specific student days off)
         let isOff = false;
         if (idx === 0 && (day === 5 || day === 18)) isOff = true;
         if (idx === 1 && (day === 10 || day === 11)) isOff = true;
@@ -102,10 +114,8 @@ const seedFullData = async () => {
     }
 
     await DailyMeal.insertMany(mealsToInsert);
-    console.log(`✅ Seeded ${mealsToInsert.length} daily meal records.`);
 
-    // 4. Seed Expenses (General & Special)
-    console.log('🛒 Inserting Market Expenses...');
+    console.log('🛒 Creating Expenses on Atlas...');
     const expensesToInsert = [
       {
         date: '2026-07-02',
@@ -114,7 +124,7 @@ const seedFullData = async () => {
         cost: 1200,
         paidBy: admin._id,
         paidByName: admin.name,
-        notes: 'Fresh vegetables and rice for first week'
+        notes: 'Fresh vegetables and rice'
       },
       {
         date: '2026-07-05',
@@ -123,7 +133,7 @@ const seedFullData = async () => {
         cost: 1800,
         paidBy: admin._id,
         paidByName: admin.name,
-        notes: 'Monthly grocery staples'
+        notes: 'Monthly staples'
       },
       {
         date: '2026-07-10',
@@ -132,7 +142,7 @@ const seedFullData = async () => {
         cost: 1150,
         paidBy: admin._id,
         paidByName: admin.name,
-        notes: 'Kitchen gas refill'
+        notes: 'Gas refill'
       },
       {
         date: '2026-07-12',
@@ -141,34 +151,34 @@ const seedFullData = async () => {
         cost: 1600,
         paidBy: admin._id,
         paidByName: admin.name,
-        notes: 'Special weekend feast'
+        notes: 'Special feast'
       },
       {
         date: '2026-07-15',
-        itemName: 'Weekly Green Vegetables & Dairy',
+        itemName: 'Weekly Green Vegetables',
         category: 'general',
         cost: 950,
         paidBy: admin._id,
         paidByName: admin.name,
-        notes: 'Fresh veggies and curd'
+        notes: 'Fresh veggies'
       },
       {
         date: '2026-07-19',
-        itemName: 'Paneer Butter Masala Special Feast',
+        itemName: 'Paneer Butter Masala Special',
         category: 'special',
         cost: 1200,
         paidBy: admin._id,
         paidByName: admin.name,
-        notes: 'Weekend special dinner'
+        notes: 'Weekend dinner'
       },
       {
         date: '2026-07-20',
-        itemName: 'Milk Supply & Breakfast Goods',
+        itemName: 'Milk & Breakfast Supplies',
         category: 'general',
         cost: 850,
         paidBy: admin._id,
         paidByName: admin.name,
-        notes: 'Breakfast items'
+        notes: 'Breakfast goods'
       },
       {
         date: '2026-07-24',
@@ -177,15 +187,13 @@ const seedFullData = async () => {
         cost: 1400,
         paidBy: admin._id,
         paidByName: admin.name,
-        notes: 'Weekly fresh vegetables purchase'
+        notes: 'Weekly fresh vegetables'
       }
     ];
 
     await Expense.insertMany(expensesToInsert);
-    console.log(`✅ Seeded ${expensesToInsert.length} expense records.`);
 
-    // 5. Seed Payments (Student advance deposits)
-    console.log('💳 Inserting Advance Payments...');
+    console.log('💳 Creating Payments on Atlas...');
     const paymentsToInsert = [
       {
         date: '2026-07-01',
@@ -222,39 +230,37 @@ const seedFullData = async () => {
     ];
 
     await Payment.insertMany(paymentsToInsert);
-    console.log(`✅ Seeded ${paymentsToInsert.length} payment records.`);
 
-    // 6. Log Initial Seed Activity
     await ActivityLog.create({
-      actionType: 'SYSTEM_RESET_AND_SEED',
-      entityName: 'Database',
-      description: 'Populated full initial dataset including users, daily meals, expenses, and payments.',
-      oldValue: 'Empty DB',
-      newValue: 'Seeded DB',
+      actionType: 'ATLAS_SEED',
+      entityName: 'MongoDB Atlas',
+      description: 'Seeded admin and student accounts along with daily meals, expenses, and payments.',
+      oldValue: 'Empty Atlas DB',
+      newValue: 'Seeded Atlas DB',
       performedBy: admin.name,
       performedByRole: 'admin',
       date: '2026-07-25'
     });
 
     console.log('\n======================================================');
-    console.log('🎉 DATABASE SEEDING COMPLETED SUCCESSFULLY!');
+    console.log('🚀 MONGODB ATLAS SEEDING COMPLETED SUCCESSFULLY!');
     console.log('======================================================');
-    console.log('Admin Account:');
+    console.log('Admin Credentials (Atlas):');
     console.log('  Email:    mealhub.mohan@gmail.com');
     console.log('  Password: admin123');
     console.log('------------------------------------------------------');
-    console.log('Sample Student Accounts:');
-    console.log('  1. rahul@gmail.com    / student123  (Rahul Sharma - Room A-102)');
-    console.log('  2. priya@gmail.com    / student123  (Priya Patel  - Room A-103)');
-    console.log('  3. amit@gmail.com     / student123  (Amit Kumar   - Room B-201)');
-    console.log('  4. sneha@gmail.com    / student123  (Sneha Verma  - Room B-202)');
+    console.log('Student Credentials (Atlas):');
+    console.log('  1. rahul@gmail.com    / student123');
+    console.log('  2. priya@gmail.com    / student123');
+    console.log('  3. amit@gmail.com     / student123');
+    console.log('  4. sneha@gmail.com    / student123');
     console.log('======================================================\n');
 
     process.exit(0);
   } catch (err) {
-    console.error('❌ Error seeding full database data:', err);
+    console.error('❌ Error during Atlas seeding:', err);
     process.exit(1);
   }
 };
 
-seedFullData();
+seedAtlas();

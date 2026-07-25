@@ -1,33 +1,21 @@
 const ActivityLog = require('../models/ActivityLog');
-const { inMemActivityLogs } = require('../utils/inMemoryStore');
 
 // @desc    Get activity logs (ordered chronologically Old -> New by default)
 // @route   GET /api/activity-logs?month=YYYY-MM&order=asc|desc
 const getActivityLogs = async (req, res) => {
   const month = req.query.month || new Date().toISOString().substring(0, 7);
-  const order = req.query.order === 'desc' ? -1 : 1; // 1 for asc (Old -> New), -1 for desc (New -> Old)
+  const order = req.query.order === 'desc' ? -1 : 1;
 
   try {
     const dbLogs = await ActivityLog.find({ date: { $regex: `^${month}` } })
       .sort({ timestamp: order })
       .lean();
 
-    if (dbLogs && dbLogs.length > 0) {
-      return res.json(dbLogs);
-    }
+    return res.json(dbLogs || []);
   } catch (err) {
     console.error('Error fetching activity logs from DB:', err.message);
+    return res.status(500).json({ message: 'Failed to fetch activity logs from database' });
   }
-
-  // Fallback to in-memory store
-  let memLogs = inMemActivityLogs.filter(a => a.date.startsWith(month));
-  memLogs.sort((a, b) => {
-    const timeA = new Date(a.timestamp || a.createdAt).getTime();
-    const timeB = new Date(b.timestamp || b.createdAt).getTime();
-    return order === 1 ? timeA - timeB : timeB - timeA;
-  });
-
-  res.json(memLogs);
 };
 
 // @desc    Create manual activity log
@@ -59,22 +47,8 @@ const createActivityLog = async (req, res) => {
     return res.status(201).json(newLog);
   } catch (err) {
     console.error('Error creating activity log in DB:', err);
+    return res.status(500).json({ message: 'Failed to create activity log in database' });
   }
-
-  const memLog = {
-    _id: 'act_' + Math.random().toString(36).substring(2, 9),
-    actionType: actionType || 'CUSTOM_ACTION',
-    entityName: entityName || 'General',
-    description,
-    oldValue: String(oldValue || 'N/A'),
-    newValue: String(newValue || 'N/A'),
-    performedBy,
-    performedByRole,
-    date: dateStr,
-    timestamp: now
-  };
-  inMemActivityLogs.push(memLog);
-  res.status(201).json(memLog);
 };
 
 module.exports = {

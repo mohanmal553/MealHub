@@ -1,18 +1,15 @@
 const SystemConfig = require('../models/SystemConfig');
 
-let inMemMaintenanceMode = false;
-
 // @desc    Get Maintenance Mode Status
 // @route   GET /api/system/maintenance
 const getMaintenanceStatus = async (req, res) => {
   try {
     const config = await SystemConfig.findOne({ key: 'maintenance_mode' });
-    if (config) {
-      return res.json({ isMaintenanceMode: Boolean(config.value) });
-    }
-  } catch (err) {}
-
-  res.json({ isMaintenanceMode: inMemMaintenanceMode });
+    return res.json({ isMaintenanceMode: config ? Boolean(config.value) : false });
+  } catch (err) {
+    console.error('Error fetching maintenance mode:', err);
+    return res.json({ isMaintenanceMode: false });
+  }
 };
 
 // @desc    Toggle Maintenance Mode Status (Admin Only)
@@ -36,10 +33,8 @@ const toggleMaintenanceStatus = async (req, res) => {
     return res.json({ isMaintenanceMode: newValue });
   } catch (err) {
     console.error('Error updating maintenance mode in DB:', err);
+    return res.status(500).json({ message: 'Failed to update maintenance mode in database' });
   }
-
-  inMemMaintenanceMode = newValue;
-  res.json({ isMaintenanceMode: inMemMaintenanceMode });
 };
 
 module.exports = {

@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const Expense = require('../models/Expense');
-const { inMemExpenses, generateId } = require('../utils/inMemoryStore');
 const { logActivity } = require('../utils/activityLogger');
 
 // @desc    Get expenses for a month from database
@@ -16,13 +15,8 @@ const getExpenses = async (req, res) => {
     return res.json(dbExpenses || []);
   } catch (err) {
     console.error('Error fetching expenses from DB:', err.message);
+    return res.status(500).json({ message: 'Failed to fetch market expenses from database' });
   }
-
-  const memExpenses = inMemExpenses
-    .filter(e => e.date.startsWith(month))
-    .sort((a, b) => b.date.localeCompare(a.date));
-
-  res.json(memExpenses);
 };
 
 // @desc    Create a new grocery market expense
@@ -71,31 +65,8 @@ const addExpense = async (req, res) => {
     return res.status(201).json(expense);
   } catch (err) {
     console.error('Error adding expense to DB:', err);
+    return res.status(500).json({ message: 'Failed to save expense to database' });
   }
-
-  const newMemExp = {
-    _id: 'exp_' + generateId(),
-    date,
-    itemName: itemName.trim(),
-    category: category || 'general',
-    cost: Number(cost),
-    paidBy: paidBy || null,
-    paidByName: paidByName || 'Member',
-    notes: notes || ''
-  };
-
-  inMemExpenses.push(newMemExp);
-
-  await logActivity({
-    req,
-    actionType: 'EXPENSE_CREATED',
-    entityName: 'Market Expenses',
-    description: `Logged new ${category || 'general'} grocery item "${itemName.trim()}" on ${date}`,
-    oldValue: 'None',
-    newValue: `₹${cost} (Paid by ${paidByName || 'Member'})`
-  });
-
-  res.status(201).json(newMemExp);
 };
 
 // @desc    Update expense
@@ -106,62 +77,39 @@ const updateExpense = async (req, res) => {
 
   try {
     const exp = await Expense.findById(expId);
-    if (exp) {
-      const oldSummary = `"${exp.itemName}" (₹${exp.cost})`;
-
-      if (date) exp.date = date;
-      if (itemName) exp.itemName = itemName.trim();
-      if (category) exp.category = category;
-      if (cost !== undefined) exp.cost = Number(cost);
-      if (paidBy !== undefined) {
-        exp.paidBy = (paidBy && mongoose.Types.ObjectId.isValid(paidBy)) ? new mongoose.Types.ObjectId(paidBy) : paidBy;
-      }
-      if (paidByName !== undefined) exp.paidByName = paidByName;
-      if (notes !== undefined) exp.notes = notes;
-
-      const updated = await exp.save();
-
-      await logActivity({
-        req,
-        actionType: 'EXPENSE_UPDATED',
-        entityName: 'Market Expenses',
-        description: `Updated grocery expense details for "${updated.itemName}"`,
-        oldValue: oldSummary,
-        newValue: `"${updated.itemName}" (₹${updated.cost})`
-      });
-
-      console.log(`✅ Expense DB Update Success: ${expId}`);
-      return res.json(updated);
+    if (!exp) {
+      return res.status(404).json({ message: 'Expense record not found' });
     }
-  } catch (err) {
-    console.error('Error updating expense in DB:', err);
-  }
 
-  const idx = inMemExpenses.findIndex(e => e._id === expId);
-  if (idx !== -1) {
-    const oldSummary = `"${inMemExpenses[idx].itemName}" (₹${inMemExpenses[idx].cost})`;
+    const oldSummary = `"${exp.itemName}" (₹${exp.cost})`;
 
-    if (date) inMemExpenses[idx].date = date;
-    if (itemName) inMemExpenses[idx].itemName = itemName.trim();
-    if (category) inMemExpenses[idx].category = category;
-    if (cost !== undefined) inMemExpenses[idx].cost = Number(cost);
-    if (paidBy !== undefined) inMemExpenses[idx].paidBy = paidBy;
-    if (paidByName !== undefined) inMemExpenses[idx].paidByName = paidByName;
-    if (notes !== undefined) inMemExpenses[idx].notes = notes;
+    if (date) exp.date = date;
+    if (itemName) exp.itemName = itemName.trim();
+    if (category) exp.category = category;
+    if (cost !== undefined) exp.cost = Number(cost);
+    if (paidBy !== undefined) {
+      exp.paidBy = (paidBy && mongoose.Types.ObjectId.isValid(paidBy)) ? new mongoose.Types.ObjectId(paidBy) : paidBy;
+    }
+    if (paidByName !== undefined) exp.paidByName = paidByName;
+    if (notes !== undefined) exp.notes = notes;
+
+    const updated = await exp.save();
 
     await logActivity({
       req,
       actionType: 'EXPENSE_UPDATED',
       entityName: 'Market Expenses',
-      description: `Updated grocery expense details for "${inMemExpenses[idx].itemName}"`,
+      description: `Updated grocery expense details for "${updated.itemName}"`,
       oldValue: oldSummary,
-      newValue: `"${inMemExpenses[idx].itemName}" (₹${inMemExpenses[idx].cost})`
+      newValue: `"${updated.itemName}" (₹${updated.cost})`
     });
 
-    return res.json(inMemExpenses[idx]);
+    console.log(`✅ Expense DB Update Success: ${expId}`);
+    return res.json(updated);
+  } catch (err) {
+    console.error('Error updating expense in DB:', err);
+    return res.status(500).json({ message: 'Failed to update expense in database' });
   }
-
-  res.status(404).json({ message: 'Expense record not found' });
 };
 
 // @desc    Delete expense
@@ -171,31 +119,12 @@ const deleteExpense = async (req, res) => {
 
   try {
     const exp = await Expense.findById(expId);
-    if (exp) {
-      const oldSummary = `"${exp.itemName}" (₹${exp.cost})`;
-      await Expense.findByIdAndDelete(expId);
-
-      await logActivity({
-        req,
-        actionType: 'EXPENSE_DELETED',
-        entityName: 'Market Expenses',
-        description: `Deleted market expense record "${exp.itemName}"`,
-        oldValue: oldSummary,
-        newValue: 'DELETED'
-      });
-
-      console.log(`✅ Expense DB Delete Success: ${expId}`);
-      return res.json({ message: 'Expense deleted' });
+    if (!exp) {
+      return res.status(404).json({ message: 'Expense not found' });
     }
-  } catch (err) {
-    console.error('Error deleting expense from DB:', err);
-  }
 
-  const idx = inMemExpenses.findIndex(e => e._id === expId);
-  if (idx !== -1) {
-    const exp = inMemExpenses[idx];
     const oldSummary = `"${exp.itemName}" (₹${exp.cost})`;
-    inMemExpenses.splice(idx, 1);
+    await Expense.findByIdAndDelete(expId);
 
     await logActivity({
       req,
@@ -206,10 +135,12 @@ const deleteExpense = async (req, res) => {
       newValue: 'DELETED'
     });
 
+    console.log(`✅ Expense DB Delete Success: ${expId}`);
     return res.json({ message: 'Expense deleted' });
+  } catch (err) {
+    console.error('Error deleting expense from DB:', err);
+    return res.status(500).json({ message: 'Failed to delete expense from database' });
   }
-
-  res.status(404).json({ message: 'Expense not found' });
 };
 
 module.exports = {

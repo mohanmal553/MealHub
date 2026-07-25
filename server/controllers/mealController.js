@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const DailyMeal = require('../models/DailyMeal');
-const { inMemDailyMeals, generateId } = require('../utils/inMemoryStore');
 const { logActivity } = require('../utils/activityLogger');
 
 // @desc    Get meals for a specific month
@@ -13,10 +12,8 @@ const getMealsByMonth = async (req, res) => {
     return res.json(dbMeals || []);
   } catch (err) {
     console.error('Error fetching meals from DB:', err.message);
+    return res.status(500).json({ message: 'Failed to fetch meal records from database' });
   }
-
-  const memMeals = inMemDailyMeals.filter(m => m.date.startsWith(month));
-  res.json(memMeals);
 };
 
 // @desc    Toggle or set single meal status (ON vs OFF)
@@ -70,25 +67,7 @@ const toggleMealStatus = async (req, res) => {
     return res.json(meal);
   } catch (err) {
     console.error('Error saving meal to DB:', err);
-  }
-
-  const keyIndex = inMemDailyMeals.findIndex(m => m.date === date && (m.student === studentId || m.student?._id === studentId));
-  if (keyIndex !== -1) {
-    inMemDailyMeals[keyIndex].status = finalStatus;
-    inMemDailyMeals[keyIndex].mealCount = finalCount;
-    if (note !== undefined) inMemDailyMeals[keyIndex].note = note;
-    return res.json(inMemDailyMeals[keyIndex]);
-  } else {
-    const newMeal = {
-      _id: `meal_${date}_${studentId}`,
-      date,
-      student: studentId,
-      status: finalStatus,
-      mealCount: finalCount,
-      note: note || ''
-    };
-    inMemDailyMeals.push(newMeal);
-    return res.json(newMeal);
+    return res.status(500).json({ message: 'Failed to save meal record to database' });
   }
 };
 
@@ -121,30 +100,8 @@ const bulkToggleMeals = async (req, res) => {
     return res.json({ message: 'Meals updated successfully' });
   } catch (err) {
     console.error('Error bulk updating meals in DB:', err);
+    return res.status(500).json({ message: 'Failed to update meals in database' });
   }
-
-  mealUpdates.forEach(update => {
-    const sId = update.studentId;
-    const finalStatus = (update.status || 'ON').toUpperCase();
-    const finalCount = update.mealCount !== undefined ? Number(update.mealCount) : (finalStatus === 'ON' ? 1 : 0);
-
-    const idx = inMemDailyMeals.findIndex(m => m.date === date && (m.student === sId || m.student?._id === sId));
-    if (idx !== -1) {
-      inMemDailyMeals[idx].status = finalStatus;
-      inMemDailyMeals[idx].mealCount = finalCount;
-    } else {
-      inMemDailyMeals.push({
-        _id: `meal_${date}_${sId}`,
-        date,
-        student: sId,
-        status: finalStatus,
-        mealCount: finalCount,
-        note: ''
-      });
-    }
-  });
-
-  res.json({ message: 'Meals updated successfully' });
 };
 
 // @desc    Get student personal history
@@ -167,12 +124,8 @@ const getMyMealHistory = async (req, res) => {
     return res.json(dbMeals || []);
   } catch (err) {
     console.error('Error getting meal history from DB:', err);
+    return res.status(500).json({ message: 'Failed to fetch personal meal history' });
   }
-
-  const memMeals = inMemDailyMeals.filter(
-    m => (m.student === studentId || m.student?._id === studentId) && m.date.startsWith(month)
-  );
-  res.json(memMeals);
 };
 
 module.exports = {
