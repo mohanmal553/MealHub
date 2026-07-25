@@ -1,20 +1,14 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { AlertDialog } from '../components/AlertDialog';
-import { UtensilsCrossed, ArrowRight, Eye, EyeOff, Wrench, ShieldAlert } from 'lucide-react';
+import { UtensilsCrossed, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 export const Login = () => {
-  const { login, isMaintenanceMode, fetchMaintenanceStatus } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '', type: 'info' });
-
-  useEffect(() => {
-    fetchMaintenanceStatus();
-  }, []);
 
   const handleLoginSubmit = async (e) => {
     if (e) e.preventDefault();
@@ -22,26 +16,7 @@ export const Login = () => {
     setLoading(true);
 
     try {
-      // Re-check maintenance mode status right before login
-      await fetchMaintenanceStatus();
-
-      const uData = await login(email, password);
-
-      if (isMaintenanceMode && uData.role !== 'admin') {
-        setAlertDialog({
-          isOpen: true,
-          title: 'System Under Maintenance 🛠️',
-          message: `Hello ${uData.name || 'Member'}, the system is currently under scheduled maintenance by the Admin. You will be redirected to the Maintenance Screen.`,
-          type: 'warning'
-        });
-      } else {
-        setAlertDialog({
-          isOpen: true,
-          title: 'Login Successful! 🎉',
-          message: `Welcome back, ${uData.name || 'User'}! You have successfully signed in to MealHub.`,
-          type: 'success'
-        });
-      }
+      await login(email, password);
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid credentials. Check email and password.');
     } finally {
@@ -65,19 +40,6 @@ export const Login = () => {
           <h1 className="text-3xl font-black text-white tracking-tight">MealHub</h1>
           <p className="text-xs text-slate-400 font-medium">Hostel Member Meal & Grocery Expense Management</p>
         </div>
-
-        {/* Maintenance Banner if Maintenance Mode is active */}
-        {isMaintenanceMode && (
-          <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs font-semibold flex items-center gap-2.5 shadow-lg animate-pulse">
-            <Wrench className="h-5 w-5 text-amber-400 shrink-0" />
-            <div>
-              <div className="font-extrabold text-amber-300">System Maintenance Mode Active</div>
-              <div className="text-[11px] text-amber-200/80 font-normal">
-                App is undergoing scheduled updates. Regular member dashboard access is paused. (Admin access enabled)
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Form Card */}
         <div className="glass-panel rounded-3xl p-6 border border-slate-800 shadow-2xl space-y-5">
@@ -138,14 +100,6 @@ export const Login = () => {
           </form>
         </div>
       </div>
-
-      <AlertDialog
-        isOpen={alertDialog.isOpen}
-        onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
-        title={alertDialog.title}
-        message={alertDialog.message}
-        type={alertDialog.type}
-      />
     </div>
   );
 };
