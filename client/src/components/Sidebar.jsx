@@ -7,8 +7,7 @@ import {
   Receipt, 
   Users, 
   History,
-  Code2,
-  Info
+  Code2
 } from 'lucide-react';
 
 export const Sidebar = ({ activeTab, setActiveTab }) => {
@@ -44,7 +43,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
             </span>
           </div>
           
-          {/* Navigation Bar - Fully Visible without Corner Clipping */}
+          {/* Navigation Bar */}
           <nav className="flex md:flex-col gap-2 p-1 overflow-x-auto md:overflow-visible no-scrollbar scroll-smooth">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -65,39 +64,6 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
               );
             })}
           </nav>
-        </div>
-
-        {/* Developer Profile Card - Fully Visible & Adjusted for Mobile */}
-        <div className="mt-3 md:mt-6 pt-2.5 md:pt-4 border-t border-slate-800/80">
-          <div 
-            onClick={() => setIsAboutModalOpen(true)}
-            className="glass-card p-2.5 md:p-3 rounded-2xl border border-slate-800 hover:border-indigo-500/50 transition cursor-pointer space-y-1.5 group"
-          >
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 md:h-9 md:w-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 p-0.5 shadow-md flex-shrink-0">
-                <div className="h-full w-full bg-slate-950 rounded-[10px] flex items-center justify-center font-black text-[10px] md:text-xs text-white">
-                  M
-                </div>
-              </div>
-              <div className="min-w-0 flex-1">
-                <h5 className="text-xs font-black text-white truncate group-hover:text-indigo-300 transition">
-                  Mohan
-                </h5>
-                <p className="text-[9px] md:text-[10px] font-bold text-indigo-400 flex items-center gap-1">
-                  <Code2 className="h-3 w-3" /> Software Developer
-                </p>
-              </div>
-              <Info className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
-            </div>
-
-            <p className="text-[9px] md:text-[10px] text-slate-400 italic line-clamp-1 leading-tight">
-              "Crafting elegant web applications."
-            </p>
-
-            <div className="text-[9px] md:text-[10px] font-extrabold text-slate-300 group-hover:text-white flex items-center justify-between pt-1 border-t border-slate-800/60">
-              <span className="truncate">mohanmal553@gmail.com</span>
-            </div>
-          </div>
         </div>
       </aside>
 

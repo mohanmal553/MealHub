@@ -7,6 +7,7 @@ const baseURL = rawBaseUrl
 
 const API = axios.create({
   baseURL,
+  timeout: 30000, // 30-second timeout to handle cloud platform cold starts (e.g. Render spin-up)
 });
 
 // Add Authorization Token header from sessionStorage
